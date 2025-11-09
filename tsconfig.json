@@ -27,6 +27,7 @@
 
     /* Path mapping */
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["./client/*"],
       "@shared/*": ["./shared/*"]
