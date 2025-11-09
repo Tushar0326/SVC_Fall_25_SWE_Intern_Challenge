@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    name: Test & Coverage
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fairdatause_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Create .env file for tests
+        run: |
+          cat > .env << EOF
+          NODE_ENV=test
+          TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fairdatause_test
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fairdatause_test
+          REDDIT_CLIENT_ID=test_client_id
+          REDDIT_CLIENT_SECRET=test_client_secret
+          PING_MESSAGE=test ping
+          EOF
+          echo "✅ Created .env file for tests"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 2
+          done
+          echo "✅ PostgreSQL is ready"
+
+      - name: Run backend tests with coverage
+        run: npm run test:backend:coverage
+        env:
+          NODE_ENV: test
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
+          REDDIT_CLIENT_ID: test_client_id
+          REDDIT_CLIENT_SECRET: test_client_secret
+          PING_MESSAGE: test ping
+
+      - name: Run frontend tests with coverage
+        run: npm run test:frontend:coverage
+        env:
+          NODE_ENV: test
+
+      - name: Upload backend coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: server/coverage/
+          retention-days: 30
+
+      - name: Upload frontend coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage
+          path: client/coverage/
+          retention-days: 30
+
+      - name: Upload coverage summary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-summary
+          path: |
+            server/coverage/coverage-summary.json
+            client/coverage/coverage-summary.json
+          retention-days: 30
+          if-no-files-found: ignore
+

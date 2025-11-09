@@ -8,20 +8,22 @@ export default defineConfig({
     globals: true,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'lcov'],
-      reportsDirectory: './coverage/backend',
+      reporter: ['text', 'html', 'lcov', 'json'],
+      reportsDirectory: './server/coverage',
       include: ['server/**/*.ts'],
       exclude: [
         'server/**/*.test.ts',
         'server/**/*.spec.ts',
         'server/node-build.ts',
       ],
+      // Include untested files in coverage report
+      all: true,
       thresholds: {
         global: {
-          branches: 80,
-          functions: 80,
-          lines: 80,
-          statements: 80,
+          branches: 100,
+          functions: 100,
+          lines: 100,
+          statements: 100,
         },
       },
     },
