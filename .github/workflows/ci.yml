@@ -39,9 +39,9 @@ jobs:
       - name: Create .env for tests (safe absolute path)
         shell: bash
         run: |
-          APP_DIR="$GITHUB_WORKSPACE/SVC_Fall_25_SWE_Intern_Challenge"
-          mkdir -p "$APP_DIR"
-          ENV_PATH="$APP_DIR/.env"
+          # write .env into the checkout workspace root
+          ENV_PATH="$GITHUB_WORKSPACE/.env"
+          mkdir -p "$(dirname "$ENV_PATH")"
           {
             echo "NODE_ENV=test"
             echo "TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fairdatause_test"
@@ -53,9 +53,8 @@ jobs:
           echo "Wrote .env to: $ENV_PATH"
           ls -l "$ENV_PATH"
 
-      - name: Install dependencies (app subfolder)
+      - name: Install dependencies (repo root)
         run: npm install
-        working-directory: SVC_Fall_25_SWE_Intern_Challenge
 
       - name: Wait for PostgreSQL
         shell: bash
@@ -70,7 +69,7 @@ jobs:
           CI: "true"
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
-        run: node "$GITHUB_WORKSPACE/SVC_Fall_25_SWE_Intern_Challenge/scripts/test-db-setup.js"
+        run: node "$GITHUB_WORKSPACE/scripts/test-db-setup.js"
 
       - name: Run backend tests with coverage
         env:
@@ -80,19 +79,19 @@ jobs:
           REDDIT_CLIENT_ID: test_client_id
           REDDIT_CLIENT_SECRET: test_client_secret
           PING_MESSAGE: test ping
-        run: npm --prefix "$GITHUB_WORKSPACE/SVC_Fall_25_SWE_Intern_Challenge" run test:backend:coverage
+        run: npm --prefix "$GITHUB_WORKSPACE" run test:backend:coverage
 
       - name: Run frontend tests with coverage
         env:
           NODE_ENV: test
-        run: npm --prefix "$GITHUB_WORKSPACE/SVC_Fall_25_SWE_Intern_Challenge" run test:frontend:coverage
+        run: npm --prefix "$GITHUB_WORKSPACE" run test:frontend:coverage
 
       - name: Upload backend coverage reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: backend-coverage
-          path: SVC_Fall_25_SWE_Intern_Challenge/server/coverage/
+          path: server/coverage/
           retention-days: 30
 
       - name: Upload frontend coverage reports
@@ -100,7 +99,7 @@ jobs:
         if: always()
         with:
           name: frontend-coverage
-          path: SVC_Fall_25_SWE_Intern_Challenge/client/coverage/
+          path: client/coverage/
           retention-days: 30
 
       - name: Upload coverage summary
@@ -109,7 +108,7 @@ jobs:
         with:
           name: coverage-summary
           path: |
-            SVC_Fall_25_SWE_Intern_Challenge/server/coverage/coverage-summary.json
-            SVC_Fall_25_SWE_Intern_Challenge/client/coverage/coverage-summary.json
+            server/coverage/coverage-summary.json
+            client/coverage/coverage-summary.json
           retention-days: 30
           if-no-files-found: ignore
