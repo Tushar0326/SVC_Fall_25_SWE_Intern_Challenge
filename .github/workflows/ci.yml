@@ -38,11 +38,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: SVC_Fall_25_SWE_Intern_Challenge/pnpm-lock.yaml
-
-      - name: Enable Corepack (pnpm)
-        run: corepack enable
+          cache: npm
 
       - name: Create .env for tests
         run: |
@@ -56,7 +52,7 @@ jobs:
           EOF
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install
 
       - name: Wait for PostgreSQL
         run: |
@@ -72,7 +68,7 @@ jobs:
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
         run: node scripts/test-db-setup.js
 
-      - name: Run backend tests with coverage
+      - name: Run tests (npm test)
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
@@ -80,12 +76,7 @@ jobs:
           REDDIT_CLIENT_ID: test_client_id
           REDDIT_CLIENT_SECRET: test_client_secret
           PING_MESSAGE: test ping
-        run: pnpm run test:backend:coverage
-
-      - name: Run frontend tests with coverage
-        env:
-          NODE_ENV: test
-        run: pnpm run test:frontend:coverage
+        run: npm test
 
       - name: Upload backend coverage reports
         uses: actions/upload-artifact@v4
