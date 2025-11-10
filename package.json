@@ -90,7 +90,6 @@
     "@types/react-dom": "^18.3.7",
     "@types/supertest": "^6.0.3",
     "@types/three": "^0.176.0",
-    "@types/nock": "^13.5.0",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
     "@testing-library/jest-dom": "^6.6.3",
