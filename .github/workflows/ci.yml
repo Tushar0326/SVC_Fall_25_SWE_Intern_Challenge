@@ -53,7 +53,7 @@ jobs:
           echo "Wrote .env to: $ENV_PATH"
           ls -l "$ENV_PATH"
 
-      - name: Install dependencies
+      - name: Install dependencies (app subfolder)
         run: npm install
         working-directory: SVC_Fall_25_SWE_Intern_Challenge
 
@@ -70,8 +70,7 @@ jobs:
           CI: "true"
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
-        run: node scripts/test-db-setup.js
-        working-directory: SVC_Fall_25_SWE_Intern_Challenge
+        run: node "$GITHUB_WORKSPACE/SVC_Fall_25_SWE_Intern_Challenge/scripts/test-db-setup.js"
 
       - name: Run backend tests with coverage
         env:
@@ -81,14 +80,12 @@ jobs:
           REDDIT_CLIENT_ID: test_client_id
           REDDIT_CLIENT_SECRET: test_client_secret
           PING_MESSAGE: test ping
-        run: npm run test:backend:coverage
-        working-directory: SVC_Fall_25_SWE_Intern_Challenge
+        run: npm --prefix "$GITHUB_WORKSPACE/SVC_Fall_25_SWE_Intern_Challenge" run test:backend:coverage
 
       - name: Run frontend tests with coverage
         env:
           NODE_ENV: test
-        run: npm run test:frontend:coverage
-        working-directory: SVC_Fall_25_SWE_Intern_Challenge
+        run: npm --prefix "$GITHUB_WORKSPACE/SVC_Fall_25_SWE_Intern_Challenge" run test:frontend:coverage
 
       - name: Upload backend coverage reports
         uses: actions/upload-artifact@v4
