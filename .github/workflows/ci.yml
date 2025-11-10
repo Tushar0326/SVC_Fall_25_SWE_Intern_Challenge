@@ -26,11 +26,6 @@ jobs:
         ports:
           - 5432:5432
 
-    defaults:
-      run:
-        shell: bash
-        working-directory: SVC_Fall_25_SWE_Intern_Challenge
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,10 +36,12 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Create .env for tests (safe path)
+      - name: Create .env for tests (safe absolute path)
         shell: bash
         run: |
-          ENV_PATH="$GITHUB_WORKSPACE/SVC_Fall_25_SWE_Intern_Challenge/.env"
+          APP_DIR="$GITHUB_WORKSPACE/SVC_Fall_25_SWE_Intern_Challenge"
+          mkdir -p "$APP_DIR"
+          ENV_PATH="$APP_DIR/.env"
           {
             echo "NODE_ENV=test"
             echo "TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fairdatause_test"
@@ -58,6 +55,7 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        working-directory: SVC_Fall_25_SWE_Intern_Challenge
 
       - name: Wait for PostgreSQL
         shell: bash
@@ -73,6 +71,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
         run: node scripts/test-db-setup.js
+        working-directory: SVC_Fall_25_SWE_Intern_Challenge
 
       - name: Run backend tests with coverage
         env:
@@ -83,11 +82,13 @@ jobs:
           REDDIT_CLIENT_SECRET: test_client_secret
           PING_MESSAGE: test ping
         run: npm run test:backend:coverage
+        working-directory: SVC_Fall_25_SWE_Intern_Challenge
 
       - name: Run frontend tests with coverage
         env:
           NODE_ENV: test
         run: npm run test:frontend:coverage
+        working-directory: SVC_Fall_25_SWE_Intern_Challenge
 
       - name: Upload backend coverage reports
         uses: actions/upload-artifact@v4
