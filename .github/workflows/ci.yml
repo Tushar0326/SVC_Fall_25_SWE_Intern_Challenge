@@ -26,6 +26,10 @@ jobs:
         ports:
           - 5432:5432
 
+    defaults:
+      run:
+        working-directory: SVC_Fall_25_SWE_Intern_Challenge
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,12 +37,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: SVC_Fall_25_SWE_Intern_Challenge/pnpm-lock.yaml
 
-      - name: Create .env file for tests
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+
+      - name: Create .env for tests
         run: |
-          cat > .env << EOF
+          cat > .env << 'EOF'
           NODE_ENV=test
           TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fairdatause_test
           DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fairdatause_test
@@ -46,33 +54,38 @@ jobs:
           REDDIT_CLIENT_SECRET=test_client_secret
           PING_MESSAGE=test ping
           EOF
-          echo "✅ Created .env file for tests"
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Wait for PostgreSQL
         run: |
           until pg_isready -h localhost -p 5432 -U postgres; do
-            echo "Waiting for PostgreSQL to be ready..."
+            echo "Waiting for PostgreSQL..."
             sleep 2
           done
-          echo "✅ PostgreSQL is ready"
+
+      - name: Prepare test database (wait/migrate/seed)
+        env:
+          CI: "true"
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
+        run: node scripts/test-db-setup.js
 
       - name: Run backend tests with coverage
-        run: npm run test:backend:coverage
         env:
           NODE_ENV: test
-          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fairdatause_test
           REDDIT_CLIENT_ID: test_client_id
           REDDIT_CLIENT_SECRET: test_client_secret
           PING_MESSAGE: test ping
+        run: pnpm run test:backend:coverage
 
       - name: Run frontend tests with coverage
-        run: npm run test:frontend:coverage
         env:
           NODE_ENV: test
+        run: pnpm run test:frontend:coverage
 
       - name: Upload backend coverage reports
         uses: actions/upload-artifact@v4
@@ -100,4 +113,3 @@ jobs:
             client/coverage/coverage-summary.json
           retention-days: 30
           if-no-files-found: ignore
-
