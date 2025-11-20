@@ -21,6 +21,29 @@ jobs:
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    name: Test & Coverage
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fairdatause_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
           --health-timeout 5s
           --health-retries 5
         ports:
@@ -30,11 +53,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.14.0
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: 'pnpm'
 
       - name: Create .env for tests (safe absolute path)
         shell: bash
@@ -54,7 +82,7 @@ jobs:
           ls -l "$ENV_PATH"
 
       - name: Install dependencies (repo root)
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Wait for PostgreSQL
         shell: bash
@@ -79,12 +107,12 @@ jobs:
           REDDIT_CLIENT_ID: test_client_id
           REDDIT_CLIENT_SECRET: test_client_secret
           PING_MESSAGE: test ping
-        run: npm --prefix "$GITHUB_WORKSPACE" run test:backend:coverage
+        run: pnpm --dir "$GITHUB_WORKSPACE" run test:backend:coverage
 
       - name: Run frontend tests with coverage
         env:
           NODE_ENV: test
-        run: npm --prefix "$GITHUB_WORKSPACE" run test:frontend:coverage
+        run: pnpm --dir "$GITHUB_WORKSPACE" run test:frontend:coverage
 
       - name: Upload backend coverage reports
         uses: actions/upload-artifact@v4
